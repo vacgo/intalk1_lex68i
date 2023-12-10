@@ -1,0 +1,47 @@
+version: "3"
+services:
+    www:
+        build: ./
+        ports:
+            - "80:80"
+        volumes:
+            - /mnt/d/intalk1:/var/www/html/
+            - /mnt/d/intalk1/php.ini:/usr/local/etc/php/php.ini
+        links:
+            - db
+        networks:
+            - default
+    db:
+        image: mysql:8.0.32
+        container_name: db
+        ports:
+            - "3306:3306"
+        environment:
+            - MYSQL_DATABASE=data
+            - MYSQL_ALLOW_EMPTY_PASSWORD=1
+        volumes:
+            - ./mysql_data:/var/lib/mysql
+        networks:
+            - default
+
+    db_feltolt:
+        image: mysql:8.0.32
+        volumes:
+            - /mnt/d/intalk1/sql/dump.sql:/dump.sql
+        environment:
+            - MYSQL_ALLOW_EMPTY_PASSWORD=1
+        entrypoint: [ "bash", "-c", "sleep 40 && mysql --user=root --host=db --port=3306 lex68i < /dump.sql && exit"]
+        depends_on:
+            - db
+
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        links:
+            - db:db
+        ports:
+            - "8800:80"
+        environment:
+            - PMA_HOST=db
+            - PMA_PORT=3306
+        depends_on:
+            - db_feltolt
